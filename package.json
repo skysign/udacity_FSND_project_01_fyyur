@@ -1,0 +1,23 @@
+{
+  "name": "udacity_FSND_project_01_fyyur",
+  "version": "1.0.0",
+  "description": "Fyyur -----",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/skysign/udacity_FSND_project_01_fyyur.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/skysign/udacity_FSND_project_01_fyyur/issues"
+  },
+  "homepage": "https://github.com/skysign/udacity_FSND_project_01_fyyur#readme",
+  "dependencies": {
+    "bootstrap": "^3.4.1"
+  }
+}
