@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask_wtf import Form
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
-from wtforms.validators import DataRequired, AnyOf, URL
+from wtforms.validators import DataRequired, AnyOf, URL, Regexp, Optional
 
 class ShowForm(Form):
     artist_id = StringField(
@@ -83,11 +83,9 @@ class VenueForm(Form):
         'address', validators=[DataRequired()]
     )
     phone = StringField(
-        'phone'
+        'phone', validators=[DataRequired(), Regexp("^[0-9]+-?[0-9]+-?[0-9]+$", message="Phone number should only contain digits and '-'")]
     )
-    image_link = StringField(
-        'image_link'
-    )
+    image_link = StringField('image_link', validators=[Optional(), URL()])
     genres = SelectMultipleField(
         # TODO implement enum restriction
         'genres', validators=[DataRequired()],
@@ -113,28 +111,17 @@ class VenueForm(Form):
             ('Other', 'Other'),
         ]
     )
-    facebook_link = StringField(
-        'facebook_link', validators=[URL()]
-    )
-    website_link = StringField(
-        'website_link'
-    )
-
-    seeking_talent = BooleanField( 'seeking_talent' )
+    facebook_link = StringField('facebook_link', validators=[Optional(), URL()])
+    website_link = StringField('website_link', validators=[Optional(), URL()])
+    seeking_talent = BooleanField('seeking_talent')
 
     seeking_description = StringField(
         'seeking_description'
     )
 
-
-
 class ArtistForm(Form):
-    name = StringField(
-        'name', validators=[DataRequired()]
-    )
-    city = StringField(
-        'city', validators=[DataRequired()]
-    )
+    name = StringField('name', validators=[DataRequired()])
+    city = StringField('city', validators=[DataRequired()])
     state = SelectField(
         'state', validators=[DataRequired()],
         choices=[
@@ -192,12 +179,9 @@ class ArtistForm(Form):
         ]
     )
     phone = StringField(
-        # TODO implement validation logic for state
-        'phone'
+        'phone', validators=[DataRequired(), Regexp("^[0-9]+-?[0-9]+-?[0-9]+$", message="Phone number should only contain digits and '-'")]
     )
-    image_link = StringField(
-        'image_link'
-    )
+    image_link = StringField('image_link', validators=[Optional(), URL()])
     genres = SelectMultipleField(
         'genres', validators=[DataRequired()],
         choices=[
@@ -221,19 +205,8 @@ class ArtistForm(Form):
             ('Soul', 'Soul'),
             ('Other', 'Other'),
         ]
-     )
-    facebook_link = StringField(
-        # TODO implement enum restriction
-        'facebook_link', validators=[URL()]
-     )
-
-    website_link = StringField(
-        'website_link'
-     )
-
-    seeking_venue = BooleanField( 'seeking_venue' )
-
-    seeking_description = StringField(
-            'seeking_description'
-     )
-
+    )
+    facebook_link = StringField('facebook_link', validators=[Optional(), URL()])
+    website_link = StringField('website_link', validators=[Optional(), URL()])
+    seeking_venue = BooleanField('seeking_venue')
+    seeking_description = StringField('seeking_description')

@@ -185,19 +185,27 @@ def delete_venue(venue_id):
 #  ----------------------------------------------------------------
 @app.route('/artists')
 def artists():
-  artists = Artist.query.all()
+  sql = 'SELECT * FROM "public"."Artist"'
+  artists = db.engine.execute(sql)
+  print(artists)
   return render_template('pages/artists.html', artists=artists)
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-  name = request.form.get('search_term')
-  artists = Artist.query.filter(Artist.name.ilike('%'+name+'%')).all()
-  print(artists)
-  response = {
-    "count": len(artists),
-    "data": artists
-  }
-  return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
+    name = request.form.get('search_term')
+
+    sql = 'SELECT count(*) FROM "public"."Artist" where name ilike \'%%'+name+'%%\''
+    tuple = db.engine.execute(sql).fetchone()
+    cntArtists = eval(str(tuple))[0]
+
+    sql = 'SELECT * FROM "public"."Artist" where name ilike \'%%'+name+'%%\''
+    artists = db.engine.execute(sql).fetchall()
+
+    response = {
+        "count": cntArtists,
+        "data": artists
+    }
+    return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
@@ -271,34 +279,41 @@ def edit_venue_submission(venue_id):
 #  ----------------------------------------------------------------
 @app.route('/artists/create', methods=['GET'])
 def create_artist_form():
-  form = ArtistForm()
-  return render_template('forms/new_artist.html', form=form)
+    form = ArtistForm()
+    return render_template('forms/new_artist.html', form=form)
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
-  try:
-    artist = Artist(
-      name  = request.form['name'],
-      city  = request.form['city'],
-      state = request.form['state'],
-      phone = request.form['phone'],
-      genres= request.form.getlist('genres'),
-      image_link    = request.form['image_link'],
-      facebook_link = request.form['facebook_link'],
-      seeking_venue = True if request.form.get('seeking_venue') == 'y' else False,
-      website_link  = request.form['website_link'],
-      seeking_description = request.form['seeking_description'])
-    db.session.add(artist)
-    db.session.commit()
-    flash('Artist ' + request.form['name'] + ' was successfully listed!')
-  except Exception as e:
-    db.session.rollback()
-    flash('An error occurred. Artist ' + request.form['name'] + ' could not be listed.')
-  finally:
-    db.session.close()
+    form = ArtistForm(request.form)
 
-  return render_template('pages/home.html')
+    if form.validate():
+        try:
+            artist = Artist(
+                name  = request.form['name'],
+                city  = request.form['city'],
+                state = request.form['state'],
+                phone = request.form['phone'],
+                genres= request.form.getlist('genres'),
+                image_link    = request.form['image_link'],
+                facebook_link = request.form['facebook_link'],
+                seeking_venue = True if request.form.get('seeking_venue') == 'y' else False,
+                website_link  = request.form['website_link'],
+                seeking_description = request.form['seeking_description'])
+            db.session.add(artist)
+            db.session.commit()
+            flash('Artist ' + request.form['name'] + ' was successfully listed!')
 
+            return render_template('pages/home.html')
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred. Artist ' + request.form['name'] + ' could not be listed.')
+        finally:
+            db.session.close()
+    else:
+        for error in form.errors:
+            flash(form.errors[error][0])
+
+        return render_template('forms/new_artist.html', form=form)
 #  Shows
 #  ----------------------------------------------------------------
 @app.route('/shows')
