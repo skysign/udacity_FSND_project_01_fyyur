@@ -1,28 +1,35 @@
 from datetime import datetime
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
-from wtforms.validators import DataRequired, AnyOf, URL, Regexp, Optional
+from wtforms.validators import DataRequired, AnyOf, URL, Regexp, Optional, Length
 
-class ShowForm(Form):
+class ShowForm(FlaskForm):
     artist_id = StringField(
-        'artist_id'
+        'artist_id',
+        validators = [
+            DataRequired(),
+            Regexp("^[0-9]+$",message="Artist id should only contain digits")
+        ]
     )
     venue_id = StringField(
-        'venue_id'
+        'venue_id',
+        validators = [
+            DataRequired(),
+            Regexp("^[0-9]+$",
+                   message="Venue id should only contain digits")
+        ]
     )
     start_time = DateTimeField(
         'start_time',
-        validators=[DataRequired()],
+        validators = [
+            DataRequired()
+        ],
         default= datetime.today()
     )
 
-class VenueForm(Form):
-    name = StringField(
-        'name', validators=[DataRequired()]
-    )
-    city = StringField(
-        'city', validators=[DataRequired()]
-    )
+class VenueForm(FlaskForm):
+    name = StringField('name', validators=[DataRequired(), Length(min=2), Length(max=120)])
+    city = StringField('city', validators=[DataRequired(), Length(min=2), Length(max=120)])
     state = SelectField(
         'state', validators=[DataRequired()],
         choices=[
@@ -80,10 +87,16 @@ class VenueForm(Form):
         ]
     )
     address = StringField(
-        'address', validators=[DataRequired()]
+        'address', validators=[DataRequired(), Length(min=2), Length(max=120)]
     )
     phone = StringField(
-        'phone', validators=[DataRequired(), Regexp("^[0-9]+-?[0-9]+-?[0-9]+$", message="Phone number should only contain digits and '-'")]
+        'phone',
+        validators = [
+            DataRequired(),
+            Regexp("^[0-9]+-?[0-9]+-?[0-9]+$", message="Phone number should only contain digits and '-'"),
+            Length(min=10),
+            Length(max=120)
+        ]
     )
     image_link = StringField('image_link', validators=[Optional(), URL()])
     genres = SelectMultipleField(
@@ -114,14 +127,13 @@ class VenueForm(Form):
     facebook_link = StringField('facebook_link', validators=[Optional(), URL()])
     website_link = StringField('website_link', validators=[Optional(), URL()])
     seeking_talent = BooleanField('seeking_talent')
-
     seeking_description = StringField(
         'seeking_description'
     )
 
-class ArtistForm(Form):
-    name = StringField('name', validators=[DataRequired()])
-    city = StringField('city', validators=[DataRequired()])
+class ArtistForm(FlaskForm):
+    name = StringField('name', validators=[DataRequired(), Length(min=2), Length(max=120)])
+    city = StringField('city', validators=[DataRequired(), Length(min=2), Length(max=120)])
     state = SelectField(
         'state', validators=[DataRequired()],
         choices=[
@@ -179,9 +191,15 @@ class ArtistForm(Form):
         ]
     )
     phone = StringField(
-        'phone', validators=[DataRequired(), Regexp("^[0-9]+-?[0-9]+-?[0-9]+$", message="Phone number should only contain digits and '-'")]
+        'phone',
+        validators = [
+            DataRequired(),
+            Regexp("^[0-9]+-?[0-9]+-?[0-9]+$", message="Phone number should only contain digits and '-'"),
+            Length(min=2),
+            Length(max=120)
+        ]
     )
-    image_link = StringField('image_link', validators=[Optional(), URL()])
+    image_link = StringField('image_link', validators=[Optional(), URL(), Length(min=2), Length(max=120)])
     genres = SelectMultipleField(
         'genres', validators=[DataRequired()],
         choices=[
@@ -206,7 +224,7 @@ class ArtistForm(Form):
             ('Other', 'Other'),
         ]
     )
-    facebook_link = StringField('facebook_link', validators=[Optional(), URL()])
-    website_link = StringField('website_link', validators=[Optional(), URL()])
+    facebook_link = StringField('facebook_link', validators=[Optional(), URL(), Length(min=2), Length(max=120)])
+    website_link = StringField('website_link', validators=[Optional(), URL(), Length(min=2), Length(max=120)])
     seeking_venue = BooleanField('seeking_venue')
     seeking_description = StringField('seeking_description')
