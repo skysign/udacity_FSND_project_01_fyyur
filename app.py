@@ -4,6 +4,7 @@
 import os
 import sys
 import dateutil.parser
+import datetime
 import logging
 from logging import Formatter, FileHandler
 logging.basicConfig(level=logging.DEBUG)
@@ -72,6 +73,9 @@ class Show(db.Model):
     artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id', ondelete='CASCADE'), nullable=False)
     venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id', ondelete='CASCADE'), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
+
+    def __repr__(self):
+        return f'<Show {self.id} {self.artist_id} {self.venue_id} {self.start_time}>'
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -202,6 +206,40 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   artist = Artist.query.filter(Artist.id == artist_id).first()
+  datas = Show.query.join(Venue, Show.venue_id == Venue.id).\
+      add_columns(Venue.name, Venue.image_link).\
+      filter(Show.artist_id == artist_id).\
+      filter(Show.start_time >= datetime.now()).all()
+
+  upcoming_shows = []
+  for item in datas:
+      upcoming_shows.append({
+          'venue_id': item[0].id,
+          'venue_name': item[1],
+          'venue_image_link': item[2],
+          'start_time': item[0].start_time
+      })
+
+  artist.upcoming_shows_count = len(upcoming_shows)
+  artist.upcoming_shows = upcoming_shows
+
+  datas = Show.query.join(Venue, Show.venue_id == Venue.id).\
+      add_columns(Venue.name, Venue.image_link).\
+      filter(Show.artist_id == artist_id).\
+      filter(Show.start_time < datetime.now()).all()
+
+  past_shows = []
+  for item in datas:
+      past_shows.append({
+          'venue_id': item[0].id,
+          'venue_name': item[1],
+          'venue_image_link': item[2],
+          'start_time': item[0].start_time
+      })
+
+  artist.past_shows_count   = len(past_shows)
+  artist.past_shows = past_shows
+
   return render_template('pages/show_artist.html', artist=artist)
 
 #  Update
