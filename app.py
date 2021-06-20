@@ -93,59 +93,65 @@ def format_datetime(value, format='medium'):
 
 app.jinja_env.filters['datetime'] = format_datetime
 
+
 #----------------------------------------------------------------------------#
 # Controllers.
 #----------------------------------------------------------------------------#
 @app.route('/')
 def index():
-  return render_template('pages/home.html')
+    return render_template('pages/home.html')
+
 
 #  Venues
 #  ----------------------------------------------------------------
 @app.route('/venues')
 def venues():
-  venues = Venue.query.order_by(Venue.id.desc()).all()
-  uniques = set()
+    venues = Venue.query.order_by(Venue.id.desc()).all()
+    uniques = set()
 
-  for venue in venues:
-    uniques.add((venue.city, venue.state));
+    for venue in venues:
+        uniques.add((venue.city, venue.state));
 
-  areas = []
-  for unique in uniques:
-    areas.append({
-      "city": unique[0],
-      "state": unique[1],
-      "venues": []
-    })
-
-  num_shows = 0
-
-  for venue in venues:
-    for area in areas:
-      if area['city'] == venue.city and area['state'] == venue.state:
-        area['venues'].append({
-          'id': venue.id,
-          'name': venue.name,
-          'num_upcoming_shows': num_shows
+    areas = []
+    for unique in uniques:
+        areas.append({
+            "city": unique[0],
+            "state": unique[1],
+            "venues": []
         })
 
-  return render_template('pages/venues.html', areas=areas);
+    num_shows = 0
+
+    for venue in venues:
+        for area in areas:
+            if area['city'] == venue.city and area['state'] == venue.state:
+                area['venues'].append({
+                    'id': venue.id,
+                    'name': venue.name,
+                    'num_upcoming_shows': num_shows
+                })
+
+    return  render_template('pages/venues.html', areas=areas);
 
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-  name = request.form.get('search_term')
-  venues = Venue.query.filter(Venue.name.ilike('%'+name+'%')).all()
-  response = {
-    "count": len(venues),
-    "data": venues
-  }
-  return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+    name = request.form.get('search_term')
+    venues = Venue.query.filter(Venue.name.ilike('%'+name+'%')).all()
+    response = {
+        "count": len(venues),
+        "data": venues
+    }
+
+    return  render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
 
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
     venue = Venue.query.filter(Venue.id == venue_id).first()
+    venue.genres = venue.genres.replace('{', '')
+    venue.genres = venue.genres.replace('}', '')
+    venue.genres = list(venue.genres.split(','))
 
     datas = Show.query.join("artist_show").\
         join("venue_show"). \
@@ -156,7 +162,7 @@ def show_venue(venue_id):
     upcoming_shows = []
     for item in datas:
         upcoming_shows.append({
-            'artist_id': item[0].artist_show,
+            'artist_id': item[0].artist_id,
             'artist_name': item[1],
             'artist_image_link': item[2],
             'start_time': format_datetime(str(item[0].start_time))
@@ -174,7 +180,7 @@ def show_venue(venue_id):
     past_shows = []
     for item in datas:
         past_shows.append({
-            'artist_id': item[0].artist_show,
+            'artist_id': item[0].artist_id,
             'artist_name': item[1],
             'artist_image_link': item[2],
             'start_time': format_datetime(str(item[0].start_time))
@@ -185,39 +191,42 @@ def show_venue(venue_id):
 
     return render_template('pages/show_venue.html', venue=venue)
 
+
 #  Create Venue
 #  ----------------------------------------------------------------
 @app.route('/venues/create', methods=['GET'])
 def create_venue_form():
-  form = VenueForm()
-  return render_template('forms/new_venue.html', form=form)
+    form = VenueForm()
+    return render_template('forms/new_venue.html', form=form)
+
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  try:
-    venue = Venue(
-      name  = request.form['name'],
-      city  = request.form['city'],
-      state = request.form['state'],
-      address = request.form['address'],
-      phone   = request.form['phone'],
-      genres  = request.form['genres'],
-      facebook_link = request.form['facebook_link'],
-      image_link    = request.form['image_link'],
-      website_link  = request.form['website_link'],
-      seeking_talent= True if request.form.get('seeking_talent') == 'y' else False,
-      seeking_description = request.form['seeking_description']
-    )
-    db.session.add(venue)
-    db.session.commit()
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  except Exception as e:
-    flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-    db.session.rollback()
-  finally:
-    db.session.close()
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+    try:
+        venue = Venue(
+            name  = request.form['name'],
+            city  = request.form['city'],
+            state = request.form['state'],
+            address = request.form['address'],
+            phone   = request.form['phone'],
+            genres  = request.form['genres'],
+            facebook_link = request.form['facebook_link'],
+            image_link    = request.form['image_link'],
+            website_link  = request.form['website_link'],
+            seeking_talent= True if request.form.get('seeking_talent') == 'y' else False,
+            seeking_description = request.form['seeking_description']
+        )
+        db.session.add(venue)
+        db.session.commit()
+        flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    except Exception as e:
+        flash('An error occurred. Venue ' + data.name + ' could not be listed.')
+        db.session.rollback()
+    finally:
+        db.session.close()
+    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+    return render_template('pages/home.html')
+
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
@@ -228,12 +237,14 @@ def delete_venue(venue_id):
   # clicking that button delete it from the db then redirect the user to the homepage
   return None
 
+
 #  Artists
 #  ----------------------------------------------------------------
 @app.route('/artists')
 def artists():
   artists = Artist.query.order_by(Artist.id.desc()).all()
   return render_template('pages/artists.html', artists=artists)
+
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
@@ -245,9 +256,14 @@ def search_artists():
     }
     return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
 
+
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   artist = Artist.query.filter(Artist.id == artist_id).first()
+  artist.genres = artist.genres.replace('{', '')
+  artist.genres = artist.genres.replace('}', '')
+  artist.genres = list(artist.genres.split(','))
+
   datas = Show.query.join(Venue).\
       add_columns(Venue.name, Venue.image_link).\
       filter(Show.artist_id == artist_id).\
@@ -256,7 +272,7 @@ def show_artist(artist_id):
   upcoming_shows = []
   for item in datas:
       upcoming_shows.append({
-          'venue_id': item[0].id,
+          'venue_id': item[0].venue_id,
           'venue_name': item[1],
           'venue_image_link': item[2],
           'start_time': format_datetime(str(item[0].start_time))
@@ -273,7 +289,7 @@ def show_artist(artist_id):
   past_shows = []
   for item in datas:
       past_shows.append({
-          'venue_id': item[0].id,
+          'venue_id': item[0].venue_id,
           'venue_name': item[1],
           'venue_image_link': item[2],
           'start_time': format_datetime(str(item[0].start_time))
@@ -284,6 +300,7 @@ def show_artist(artist_id):
 
   return render_template('pages/show_artist.html', artist=artist)
 
+
 #  Update
 #  ----------------------------------------------------------------
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
@@ -291,6 +308,7 @@ def edit_artist(artist_id):
   form = ArtistForm()
   artist = Artist.query.filter(Artist.id == artist_id).first()
   return render_template('forms/edit_artist.html', form=form, artist=artist)
+
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
@@ -363,12 +381,14 @@ def edit_venue_submission(venue_id):
 
     return redirect(url_for('show_venue', venue_id=venue_id))
 
+
 #  Create Artist
 #  ----------------------------------------------------------------
 @app.route('/artists/create', methods=['GET'])
 def create_artist_form():
     form = ArtistForm()
     return render_template('forms/new_artist.html', form=form)
+
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
@@ -428,6 +448,7 @@ def create_shows():
     form = ShowForm()
     return render_template('forms/new_show.html', form=form)
 
+
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
     form = ShowForm(request.form)
@@ -452,6 +473,7 @@ def create_show_submission():
             flash(form.errors[error][0])
 
     return render_template('forms/new_show.html', form=form)
+
 
 @app.errorhandler(400)
 def not_found_error(error):
